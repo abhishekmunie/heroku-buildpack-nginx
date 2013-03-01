@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# bin/compile <build-dir> <cache-dir>
+
+# fail fast
+set -e
+
+# clean up leaking environment
+unset GIT_DIR
+
+# parse args
+BUILD_DIR=$1
+CACHE_DIR=$2
+
+function indent() {
+  c='s/^/       /'
+  case $(uname) in
+    Darwin) sed -l "$c";;
+    *)      sed -u "$c";;
+  esac
+}
+
+LP_DIR=`cd $(dirname $0); cd ..; pwd`
+
+# vendor nginx into the slug
+echo "-----> Vendoring nginx $NGINX_VERSION"
+mkdir -p "$BUILD_DIR/bin"
+mv $LP_DIR/vendor/nginx $BUILD_DIR/bin/nginx
+
+# build a startup script
+cat <<EOF >"$BUILD_DIR/bin/start_nginx"
+#!/usr/bin/env bash
+erb conf/nginx.conf.erb > conf/nginx.conf
+mkdir -p logs
+touch logs/access.log logs/error.log
+(tail -qF -n 0 --pid=\$\$ logs/*.log &)
+exec bin/nginx -p .
+EOF
+chmod +x "$BUILD_DIR/bin/start_nginx"
+
+if [[ ! -f $BUILD_DIR/Procfile ]]; then
+  echo "web: bin/start_nginx" > $BUILD_DIR/Procfile
+  chmod +x "$BUILD_DIR/Procfile"
+fi
