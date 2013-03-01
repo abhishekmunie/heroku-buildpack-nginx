@@ -22,13 +22,18 @@ Example usage:
     -----> Fetching custom buildpack... done
     -----> Nginx app detected
     -----> Fetching nginx binaries
-    -----> Vendoring nginx 1.3.13
+    -----> Vendoring nginx 1.3.13... done
+    -----> Creating startup script... done
+    -----> Creating Procfile... done
     ...
 
 The buildpack will detect your app as nginx if it has the file
 `nginx.conf.erb` in the `conf` directory. You must define all `listen`
 directives as `listen <%= ENV['PORT'] %>;` and also include `daemon off;` in
 order for this buildpack to work correctly.
+
+To start the server run `bin/start_nginx`.
+If no `Procfile` is present buildpack will create one with `web: bin/start_nginx`
 
 As an alternative to the above instructions you may wish to investigate
 [heroku-buildpack-multi](https://github.com/ddollar/heroku-buildpack-multi)

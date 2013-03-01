@@ -45,7 +45,7 @@ chmod +x "$BUILD_DIR/bin/start_nginx"
 echo "done"
 
 if [[ ! -f $BUILD_DIR/Procfile ]]; then
-  echo -n "-----> Creating Procfile $NGINX_VERSION... "
+  echo -n "-----> Creating Procfile... "
   echo "web: bin/start_nginx" > $BUILD_DIR/Procfile
   chmod +x "$BUILD_DIR/Procfile"
   echo "done"
