@@ -24,11 +24,15 @@ NGINX_VERSION="1.3.13"
 LP_DIR=`cd $(dirname $0); cd ..; pwd`
 
 # vendor nginx into the slug
-echo "-----> Vendoring nginx $NGINX_VERSION"
-mkdir -p "$BUILD_DIR/bin"
+echo -n "-----> Vendoring nginx $NGINX_VERSION... "
+if [[ ! -d $BUILD_DIR/bin ]]; then
+  mkdir $BUILD_DIR/bin
+fi
 mv $LP_DIR/vendor/nginx $BUILD_DIR/bin/nginx
+echo "done"
 
 # build a startup script
+echo -n "-----> Creating startup script... "
 cat <<EOF >"$BUILD_DIR/bin/start_nginx"
 #!/usr/bin/env bash
 erb conf/nginx.conf.erb > conf/nginx.conf
@@ -38,8 +42,11 @@ touch logs/access.log logs/error.log
 exec bin/nginx -p .
 EOF
 chmod +x "$BUILD_DIR/bin/start_nginx"
+echo "done"
 
 if [[ ! -f $BUILD_DIR/Procfile ]]; then
+  echo -n "-----> Creating Procfile $NGINX_VERSION... "
   echo "web: bin/start_nginx" > $BUILD_DIR/Procfile
   chmod +x "$BUILD_DIR/Procfile"
+  echo "done"
 fi
