@@ -1,8 +1,8 @@
 Heroku buildpack: nginx
 =======================
 
-This is a [Heroku buildpack](http://devcenter.heroku.com/articles/buildpack)
-for nginx.
+This is a [Heroku buildpack](http://devcenter.heroku.com/articles/buildpack) for nginx.
+The nginx-1.3.13 binary was build using the source form [nginx-binary-builder](https://github.com/abhishekmunie/nginx-binary-builder).
 
 Usage
 -----
