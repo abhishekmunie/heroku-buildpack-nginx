@@ -19,7 +19,7 @@ function indent() {
   esac
 }
 
-NGINX_VERSION="1.3.13"
+NGINX_VERSION="1.3.14"
 
 LP_DIR=`cd $(dirname $0); cd ..; pwd`
 
