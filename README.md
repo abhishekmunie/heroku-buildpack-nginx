@@ -2,7 +2,7 @@ Heroku buildpack: nginx
 =======================
 
 This is a [Heroku buildpack](http://devcenter.heroku.com/articles/buildpack) for nginx.
-The nginx-1.3.14 binary was build using the source form [abhishekmunie/nginx-binary-builder](https://github.com/abhishekmunie/nginx-binary-builder).
+The nginx-1.3.15 binary was build using the source form [abhishekmunie/nginx-binary-builder](https://github.com/abhishekmunie/nginx-binary-builder).
 
 Usage
 -----
@@ -18,13 +18,12 @@ Example usage:
 
     $ git push heroku master
     ...
-    -----> Heroku receiving push
     -----> Fetching custom buildpack... done
     -----> Nginx app detected
-    -----> Fetching nginx binaries
-    -----> Vendoring nginx 1.3.14... done
+    -----> Vendoring nginx 1.3.15... done
     -----> Creating startup script... done
     -----> Creating Procfile... done
+    -----> Discovering process types
     ...
 
 The buildpack will detect your app as nginx if it has the file
