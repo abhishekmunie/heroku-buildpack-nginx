@@ -21,6 +21,13 @@ warning() {
   echo "" >> $warnings
 }
 
+protip() {
+  echo
+  echo "PRO TIP: $*" | indent
+  echo "See https://github.com/abhishekmunie/heroku-buildpack-git" | indent
+  echo
+}
+
 build_failed() {
   head "Build failed"
   echo ""
