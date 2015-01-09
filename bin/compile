@@ -95,11 +95,11 @@ if ! test -d $cache_dir/nginx || ! test -f $cache_dir/nginx/.heroku/nginx-versio
   cd $nginx_src_dir
 
   head "Compiling Nginx..."
-  info "Configuring"
+  head "Configuring"
   ./configure --prefix="$bin_dir" 2>&1 | indent
-  info "Compiling with Make"
+  head "Compiling with Make"
   make 2>&1 | indent
-  info "Moving generated binary"
+  head "Moving generated binary"
   mv objs/nginx $bin_dir
 
   info "Nginx was Installed at: $bin_dir"
@@ -109,7 +109,7 @@ if ! test -d $cache_dir/nginx || ! test -f $cache_dir/nginx/.heroku/nginx-versio
   rm -rf $nginx_src_dir
 
   info "Caching Nginx binaries..."
-  cp -R "$bin_dir" "$cache_dir"
+  cp -R "$bin_dir" "$cache_dir/nginx"
   # Copy goodies to the cache
   cp -r $build_dir/.heroku $cache_dir/nginx
 
