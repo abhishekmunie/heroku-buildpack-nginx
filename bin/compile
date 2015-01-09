@@ -12,7 +12,7 @@ cache_dir=$2
 env_dir=$3
 bp_dir=$(cd $(dirname $0); cd ..; pwd)
 heroku_dir=$build_dir/.heroku
-mkdir -p $heroku_dir/node
+mkdir -p $heroku_dir/nginx
 warnings=$(mktemp)
 
 # Load some convenience functions like info(), echo(), and indent()
@@ -96,7 +96,7 @@ if ! test -d $cache_dir/nginx || ! test -f $cache_dir/nginx/.heroku/nginx-versio
 
   head "Compiling Nginx..."
   head "Configuring"
-  ./configure --prefix="$bin_dir" 2>&1 | indent
+  ./configure 2>&1 | indent
   head "Compiling with Make"
   make 2>&1 | indent
   head "Moving generated binary"
@@ -121,6 +121,7 @@ fi
 
 # build a startup script
 echo -n "-----> Creating startup script... "
+mkdir "$build_dir/bin"
 cat <<EOF >"$build_dir/bin/start_nginx"
 #!/usr/bin/env bash
 erb conf/nginx.conf.erb > conf/nginx.conf
