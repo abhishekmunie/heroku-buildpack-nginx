@@ -1,52 +1,144 @@
 #!/usr/bin/env bash
-# bin/compile <build-dir> <cache-dir>
 
-# fail fast
-set -e
+####### Configure environment
 
-# clean up leaking environment
+set -e            # fail fast
+set -o pipefail   # don't ignore exit codes when piping output
+# set -x          # enable debugging
+
+# Configure directories
+build_dir=$1
+cache_dir=$2
+env_dir=$3
+bp_dir=$(cd $(dirname $0); cd ..; pwd)
+heroku_dir=$build_dir/.heroku
+mkdir -p $heroku_dir/node
+warnings=$(mktemp)
+
+# Load some convenience functions like info(), echo(), and indent()
+source $bp_dir/bin/common.sh
+source $bp_dir/bin/warnings.sh
+
+# Avoid GIT_DIR leak from previous build steps
 unset GIT_DIR
 
-# parse args
-BUILD_DIR=$1
-CACHE_DIR=$2
+# Provide hook to deal with errors
+trap build_failed ERR
 
-function indent() {
-  c='s/^/       /'
-  case $(uname) in
-    Darwin) sed -l "$c";;
-    *)      sed -u "$c";;
-  esac
-}
 
-NGINX_VERSION="1.3.15"
-
-LP_DIR=`cd $(dirname $0); cd ..; pwd`
-
-# vendor nginx into the slug
-echo -n "-----> Vendoring nginx $NGINX_VERSION... "
-if [[ ! -d $BUILD_DIR/bin ]]; then
-  mkdir $BUILD_DIR/bin
+if [ -f $build_dir/_nginx.cfg ]; then
+  source $build_dir/_nginx.cfg
 fi
-mv $LP_DIR/vendor/nginx $BUILD_DIR/bin/nginx
-echo "done"
+
+if [ $NGINX_VERSION ] && [ ! $nginx_version ]; then
+  nginx_version=$NGINX_VERSION
+fi
+
+# Recommend using semver ranges in a safe manner
+if [ ! $nginx_version ]; then
+  protip "You can specify a Nginx version in _nginx.cfg"
+  nginx_version=""
+elif [ "$nginx_version" == "*" ]; then
+  protip "Avoid using ranges like '*' in _nginx.cfg"
+  nginx_version=""
+elif [ ${nginx_version:0:1} == ">" ]; then
+  protip "Avoid using ranges starting with '>' in _nginx.cfg"
+  nginx_version=""
+fi
+
+# Output info about requested version and resolved Nginx version
+if [ "$nginx_version" == "" ]; then
+  nginx_version="1.7.9"
+  nginx_url="http://nginx.org/download/nginx-1.7.9.tar.gz"
+  info "Defaulting to version 1.7.9."
+# elif [ "$nginx_version" == "mainline" ]; then
+#   nginx_version="mainline"
+#   nginx_url="http://nginx.org/download/nginx-1.7.9.tar.gz"
+#   info "Requested nginx version: mainline - $nginx_version"
+# elif [ "$nginx_version" == "stable" ]; then
+#   nginx_version="stable"
+#   nginx_url="http://nginx.org/download/nginx-1.7.9.tar.gz"
+#   info "Requested nginx version: mainline - $nginx_version"
+else
+  nginx_url="http://nginx.org/download/nginx-$nginx_version.tar.gz"
+  info "Requested nginx version: $nginx_version"
+fi
+
+# Load config vars into environment; start with defaults
+export NGINX_VERSION=$nginx_version
+export_env_dir $env_dir
+
+nginx_src_dir="nginx-$nginx_version"
+
+bin_dir=$build_dir/vendor/nginx
+
+mkdir -p "$bin_dir"
+
+# [ "$nginx" == "mainline" ] || [ "$nginx" == "stable" ]
+if ! test -d $cache_dir/nginx || ! test -f $cache_dir/nginx/.heroku/nginx-version || [ $(cat $cache_dir/nginx/.heroku/nginx-version) != "$nginx_version" ]; then
+  info "Nginx version changed since last build; rebuilding."
+
+  # Persist goodies like nginx-version in the slug
+  mkdir -p $build_dir/.heroku
+
+  # Save resolved Nginx version in the slug for later reference
+  echo $nginx_version > $build_dir/.heroku/nginx-version
+
+  # Purge nginx-related cached content, being careful not to purge the top-level
+  # cache, for the sake of heroku-buildpack-multi apps.
+  info "Cleaning cached Nginx version..."
+  rm -rf $cache_dir/nginx
+
+  info "Downloading Nginx $nginx_version..."
+  curl $nginx_url -sL -o - | tar xzf - -C $build_dir
+  cd "$build_dir"
+  cd $nginx_src_dir
+
+  head "Compiling Nginx..."
+  info "Configuring"
+  ./configure --prefix="$bin_dir" 2>&1 | indent
+  info "Compiling with Make"
+  make 2>&1 | indent
+  info "Moving generated binary"
+  mv objs/nginx $bin_dir
+
+  info "Nginx was Installed at: $bin_dir"
+
+  info "Cleaning up Nginx source files..."
+  cd ..
+  rm -rf $nginx_src_dir
+
+  info "Caching Nginx binaries..."
+  cp -R "$bin_dir" "$cache_dir"
+  # Copy goodies to the cache
+  cp -r $build_dir/.heroku $cache_dir/nginx
+
+else
+  info "Using cached Nginx $nginx_version..."
+  cp -R "$cache_dir/nginx" "$build_dir/vendor"
+fi
 
 # build a startup script
 echo -n "-----> Creating startup script... "
-cat <<EOF >"$BUILD_DIR/bin/start_nginx"
+cat <<EOF >"$build_dir/bin/start_nginx"
 #!/usr/bin/env bash
 erb conf/nginx.conf.erb > conf/nginx.conf
 mkdir -p logs
 touch logs/access.log logs/error.log
 (tail -qF -n 0 --pid=\$\$ logs/*.log &)
-exec bin/nginx -p .
+exec nginx -p .
 EOF
-chmod +x "$BUILD_DIR/bin/start_nginx"
+chmod +x "$build_dir/bin/start_nginx"
 echo "done"
 
-if [[ ! -f $BUILD_DIR/Procfile ]]; then
+if [[ ! -f $build_dir/Procfile ]]; then
   echo -n "-----> Creating Procfile... "
-  echo "web: bin/start_nginx" > $BUILD_DIR/Procfile
-  chmod +x "$BUILD_DIR/Procfile"
+  echo "web: bin/start_nginx" > $build_dir/Procfile
+  chmod +x "$build_dir/Procfile"
   echo "done"
 fi
+
+# Update the PATH
+info "Building runtime environment"
+mkdir -p $build_dir/.profile.d
+echo "export PATH=\"\$HOME/vendor/nginx/bin:\$PATH\";" > $build_dir/.profile.d/nginx.sh

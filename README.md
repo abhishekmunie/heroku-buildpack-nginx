@@ -2,7 +2,8 @@ Heroku buildpack: nginx
 =======================
 
 This is a [Heroku buildpack](http://devcenter.heroku.com/articles/buildpack) for nginx.
-The nginx-1.3.15 binary was build using the source form [abhishekmunie/nginx-binary-builder](https://github.com/abhishekmunie/nginx-binary-builder).
+The nginx is build using the source form (http://nginx.org/download/nginx-<nginx_version>.tar.gz).
+Built binary is cached to speedup future builds.
 
 Usage
 -----
@@ -11,7 +12,7 @@ Example usage:
 
     $ ls -R *
     conf:
-    mime.types     nginx.conf.erb
+    mime.types     _nginx.cfg     nginx.conf.erb
 
     $ heroku create --stack cedar --buildpack https://github.com/abhishekmunie/heroku-buildpack-nginx.git
     ...
