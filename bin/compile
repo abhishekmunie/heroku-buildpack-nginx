@@ -109,6 +109,7 @@ if ! test -d $cache_dir/nginx || ! test -f $cache_dir/nginx/.heroku/nginx-versio
   rm -rf $nginx_src_dir
 
   info "Caching Nginx binaries..."
+  mkdir -p "$cache_dir/nginx"
   cp -R "$bin_dir" "$cache_dir/nginx"
   # Copy goodies to the cache
   cp -r $build_dir/.heroku $cache_dir/nginx
