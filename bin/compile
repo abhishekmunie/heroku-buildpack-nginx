@@ -17,7 +17,7 @@ warnings=$(mktemp)
 
 # Load some convenience functions like info(), echo(), and indent()
 source $bp_dir/bin/common.sh
-source $bp_dir/bin/warnings.sh
+# source $bp_dir/bin/warnings.sh
 
 # Avoid GIT_DIR leak from previous build steps
 unset GIT_DIR
