@@ -100,7 +100,8 @@ if ! test -d $cache_dir/nginx || ! test -f $cache_dir/nginx/.heroku/nginx-versio
   head "Compiling with Make"
   make 2>&1 | indent
   head "Moving generated binary"
-  mv objs/nginx $bin_dir
+  mkdir -p "$bin_dir/bin"
+  mv objs/nginx "$bin_dir/bin"
 
   info "Nginx was Installed at: $bin_dir"
 
