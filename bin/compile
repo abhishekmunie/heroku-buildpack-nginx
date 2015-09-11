@@ -3,7 +3,7 @@
 ####### Configure environment
 
 set -e            # fail fast
-set -o pipefail   # don't ignore exit codes when piping output
+set -o pipefail   # dont ignore exit codes when piping output
 # set -x          # enable debugging
 
 # Configure directories
@@ -96,7 +96,7 @@ if ! test -d $cache_dir/nginx || ! test -f $cache_dir/nginx/.heroku/nginx-versio
 
   head "Compiling Nginx..."
   head "Configuring"
-  ./configure 2>&1 | indent
+  ./configure "$nginx_configure_opts" 2>&1 | indent
   head "Compiling with Make"
   make 2>&1 | indent
   head "Moving generated binary"
